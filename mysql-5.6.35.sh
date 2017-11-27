@@ -28,10 +28,9 @@ else
 fi
 
 #install mysql
-yum install libaio -y
+yum install libaio autoconf -y
 groupadd mysql
 useradd -g mysql -s /sbin/nologin mysql
-/alidata/mysql/scripts/mysql_install_db --datadir=/alidata/mysql/data --basedir=/alidata/mysql
 cp -f /alidata/mysql/support-files/mysql.server /etc/init.d/mysqld
 sed -i 's#^basedir=$#basedir=/alidata/mysql#' /etc/init.d/mysqld
 sed -i 's#^datadir=$#datadir=/alidata/mysql/data#' /etc/init.d/mysqld
@@ -111,7 +110,7 @@ innodb_spin_wait_delay = 30
 
 transaction_isolation = REPEATABLE-READ
 #innodb_additional_mem_pool_size = 16M
-innodb_buffer_pool_size = 11469M
+innodb_buffer_pool_size = 1028M
 innodb_buffer_pool_instances = 8
 innodb_buffer_pool_load_at_startup = 1
 innodb_buffer_pool_dump_at_shutdown = 1
@@ -177,6 +176,7 @@ chown -R mysql:mysql /alidata/mysql/
 chown -R mysql:mysql /alidata/mysql/data/
 chown -R mysql:mysql /alidata/mysql/log/
 chmod 755 /etc/init.d/mysqld
+/alidata/mysql/scripts/mysql_install_db --datadir=/alidata/mysql/data --basedir=/alidata/mysql
 mkdir -p /usr/local/mysql/bin
 ln -s /alidata/mysql/bin/mysqld /usr/local/mysql/bin/mysqld
 /etc/init.d/mysqld start
