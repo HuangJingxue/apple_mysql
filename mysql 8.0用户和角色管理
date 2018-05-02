@@ -1,0 +1,246 @@
+MySQL8.0新加了很多功能，其中在用户管理中增加了角色的管理，默认的密码加密方式也做了调整，由之前的sha1改为了sha2，同时加上5.7的禁用用户和用户过期的设置，这样方面用户的管理和权限的管理，也增加了用户的安全性。
+
+MySQL8.0中，MySQL库中表的文件合并到数据根目录中的mysql.ibd中（MySQL8.0 Innodb引擎重构）。
+
+同时MySQL8.0可以使用SET PERSIST动态修改参数并保存在配置文件中（mysqld-auto.cnf，保存的格式为JSON串），这个是DBA同学的福音，不必担心设置之后忘记保存在配置文件中，重启之后会被还原的问题了。
+
+查阅了MySQL8.0的官方文档，通过官方的示例来查看新的管理方式。
+
+
+1、MySQL用户管理
+
+1.1、验证插件和密码加密方式的变化
+
+在MySQL 8.0中，caching_sha2_password是默认的身份验证插件而不是之前版本的mysql_native_password，默认的密码加密方式是sha2。
+如果需要保持之前的验证方式并保持之前版本的密码加密方式需要在配置文件中修改，暂不支持动态修改，需要重启生效：default_authentication_plugin = mysql_native_password。
+将8.0已有的sha2密码修改为sha1的模式：
+
+ALTER USER 'root'@'127.0.0.1' IDENTIFIED BY 'passowrd' PASSWORD EXPIRE NEVER; #修改加密规则为永不过期
+ALTER USER 'root'@'127.0.0.1' IDENTIFIED WITH mysql_native_password BY 'password'; #更新一下用户的密码加密方式为之前版本的方式
+FLUSH PRIVILEGES; #刷新权限
+1.2 用户授权和修改密码
+
+MySQL8.0的用户授权和之前有所区别，老版本的常用授权语句在8.0中会报错：
+
+MySQL8.0之前版本：
+
+GRANT ALL ON *.* TO `wangwei`@`127.0.0.1` IDENTIFIED BY 'passowrd' WITH GRANT OPTION;
+MySQL8.0版本：
+
+CREATE USER `wangwei`@`127.0.0.1` IDENTIFIED BY 'passowrd';
+GRANT ALL ON *.* TO `wangwei`@`127.0.0.1` WITH GRANT OPTION;
+MySQL8.0中带过期时间用户的创建：
+
+CREATE USER `wangwei`@`127.0.0.1` IDENTIFIED BY 'wangwei' PASSWORD EXPIRE INTERVAL 90 DAY;
+GRANT ALL ON *.* TO `wangwei`@`127.0.0.1` WITH GRANT OPTION;
+MySQL8.0修改用户密码：
+
+1.2、密码过期时间管理
+
+要全局建立自动密码到期策略，请使用default_password_lifetime系统变量。其默认值为0，禁用自动密码过期。如果值default_password_lifetime正整数N，则表示允许的密码生存期，以便密码必须每天更改N。可以加在配置文件中：
+
+1：要建立全局策略，密码的使用期限大约为六个月，请在服务器my.cnf文件中使用以下行启动服务器：
+
+[mysqld]
+default_password_lifetime=180
+2：要建立全局策略，以便密码永不过期，请将其设置default_password_lifetime为0：
+
+[mysqld]
+default_password_lifetime=0
+这个参数是可以动态设置并保存的：
+
+SET PERSIST default_password_lifetime = 180;
+SET PERSIST default_password_lifetime = 0;
+创建和修改带有密码过期的用户，帐户特定的到期时间设置示例：
+
+要求每90天更换密码：
+
+CREATE USER 'wangwei'@'localhost' PASSWORD EXPIRE INTERVAL 90 DAY;
+ALTER USER 'wangwei'@'localhost' PASSWORD EXPIRE INTERVAL 90 DAY;
+禁用密码过期：
+
+CREATE USER ' wangwei'@'localhost' PASSWORD EXPIRE NEVER;
+ALTER USER 'wangwei'@'localhost' PASSWORD EXPIRE NEVER;
+遵循全局到期政策：
+
+CREATE USER 'wangwei'@'localhost' PASSWORD EXPIRE DEFAULT;
+ALTER USER 'wangwei'@'localhost' PASSWORD EXPIRE DEFAULT;
+1.3 MySQL用户密码重用策略设置
+
+MySQL允许限制重复使用以前的密码。可以根据密码更改次数、已用时间或两者来建立重用限制。帐户的密码历史由过去分配的密码组成。MySQL可以限制从此历史记录中选择新密码：
+
+1、如果根据密码更改次数限制帐户，则无法从指定数量的最新密码中选择新密码。例如，如果密码更改的最小数量设置为3，则新密码不能与任何最近的3个密码相同。
+
+2、如果帐户因时间的限制而被限制，则无法从历史记录中的新密码中选择新密码，该新密码不会超过指定的天数。例如，如果密码重用间隔设置为60，则新密码不得在最近60天内选择的密码之间。
+
+注意：空密码不记录在密码历史记录中，并随时可以重复使用。
+
+要全局建立密码重用策略，请使用password_history和password_reuse_interval系统变量。要在服务器启动时指定变量值，请在服务器my.cnf文件中定义它们。
+
+示例：
+
+要禁止重复使用最近6个密码或密码超过365天的任何密码，请将这些行放入您的服务器 my.cnf文件中：
+
+[mysqld]
+password_history=6
+password_reuse_interval=365
+要动态设置和保存配置，请使用如下所示的语句：
+
+SET PERSIST password_history = 6;
+SET PERSIST password_reuse_interval = 365;
+2、MySQL8.0的角色管理
+
+MySQL角色是指定的权限集合。像用户帐户一样，角色可以拥有授予和撤消的权限。可以授予用户帐户角色，授予该帐户与每个角色相关的权限。用户被授予角色权限，则该用户拥有该角色的权限。
+
+以下列表总结了MySQL提供的角色管理功能：
+
+CREATE ROLE并 DROP ROLE角色创建和删除；
+
+GRANT并 REVOKE为用户和角色分配和撤销权限；
+
+SHOW GRANTS 显示用户和角色的权限和角色分配；
+
+SET DEFAULT ROLE 指定哪些帐户角色默认处于活动状态；
+
+SET ROLE 更改当前会话中的活动角色。
+
+CURRENT_ROLE()功能显示当前会话中的活动角色。
+
+2.1 创建角色并授予用户角色权限
+
+考虑如下几种场景：
+
+应用程序使用名为app_db的数据库 。
+
+与应用程序相关联，可以为创建和维护应用程序的开发人员以及管理员账户。
+
+开发人员需要完全访问数据库。有的用户只需要读取权限，有的用户需要读取/写入权限。
+
+为清楚区分角色的权限，将角色创建为所需权限集的名称。通过授权适当的角色，可以轻松地为用户帐户授予所需的权限。
+
+要创建角色，请使用CREATE ROLE：
+
+CREATE ROLE 'app_developer', 'app_read', 'app_write';
+角色名称与用户帐户名称非常相似，由格式中的用户部分和主机部分组成。主机部分，如果省略，则默认为%。用户和主机部分可以不加引号，除非它们包含特殊字符。与帐户名称不同，角色名称的用户部分不能为空。为角色分配权限，使用与为用户分配权限相同的语法执行：
+
+GRANT ALL ON app_db.* TO 'app_developer';
+GRANT SELECT ON app_db.* TO 'app_read';
+GRANT INSERT, UPDATE, DELETE ON app_db.* TO 'app_write';CREATE ROLE 'app_developer', 'app_read', 'app_write';
+现在假设您最初需要一个开发人员帐户，两个需要只读访问权的用户以及一个需要读取/写入权限的用户。使用CREATEUSER创建用户：
+
+CREATE USER 'dev1'@'localhost' IDENTIFIED BY 'dev1pass';
+CREATE USER 'read_user1'@'localhost' IDENTIFIED BY 'read_user1pass';
+CREATE USER 'read_user2'@'localhost' IDENTIFIED BY 'read_user2pass';
+CREATE USER 'rw_user1'@'localhost' IDENTIFIED BY 'rw_user1pass';
+要为每个用户分配其所需的权限，可以使用GRANT与刚才显示的形式相同的语句，但这需要列举每个用户的个人权限。相反，使用GRANT允许授权角色而非权限的替代语法：
+
+GRANT 'app_developer' TO 'dev1'@'localhost';
+GRANT 'app_read' TO 'read_user1'@'localhost', 'read_user2'@'localhost';
+GRANT 'app_read', 'app_write' TO 'rw_user1'@'localhost';
+结合角色所需的读取和写入权限，在GRANT中授权 rw_user1用户读取和写入的角色。
+
+在GRANT授权角色的语法和授权用户的语法不同：有一个ON来区分角色和用户的授权，有ON的为用户授权，而没有ON用来分配角色。
+
+由于语法不同，因此不能在同一语句中混合分配用户权限和角色。（允许为用户分配权限和角色，但必须使用单独的GRANT语句，每种语句的语法都要与授权的内容相匹配。）
+
+2.2 检查角色权限
+
+要验证分配给用户的权限，使用 SHOW GRANTS。例如：
+
+mysql> SHOW GRANTS FOR 'dev1'@'localhost';
++-------------------------------------------------+
+| Grants for dev1@localhost                       |
++-------------------------------------------------+
+| GRANT USAGE ON *.* TO `dev1`@`localhost`        |
+| GRANT `app_developer`@`%` TO `dev1`@`localhost` |
++-------------------------------------------------+
+但是，它会显示每个授予的角色，而不会将其显示为角色所代表的权限。如果要显示角色权限，添加一个 USING来显示：
+
+mysql> SHOW GRANTS FOR 'dev1'@'localhost' USING 'app_developer';
++----------------------------------------------------------+
+| Grants for dev1@localhost                                |
++----------------------------------------------------------+
+| GRANT USAGE ON *.* TO `dev1`@`localhost`                 |
+| GRANT ALL PRIVILEGES ON `app_db`.* TO `dev1`@`localhost` |
+| GRANT `app_developer`@`%` TO `dev1`@`localhost`          |
++----------------------------------------------------------+
+同样验证其他类型的用户：
+
+mysql> SHOW GRANTS FOR 'read_user1'@'localhost' USING 'app_read';
++--------------------------------------------------------+
+| Grants for read_user1@localhost                        |
++--------------------------------------------------------+
+| GRANT USAGE ON *.* TO `read_user1`@`localhost`         |
+| GRANT SELECT ON `app_db`.* TO `read_user1`@`localhost` |
+| GRANT `app_read`@`%` TO `read_user1`@`localhost`       |
++--------------------------------------------------------+
+mysql> SHOW GRANTS FOR 'rw_user1'@'localhost' USING 'app_read', 'app_write';
++------------------------------------------------------------------------------+
+| Grants for rw_user1@localhost                                                |
++------------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO `rw_user1`@`localhost`                                 |
+| GRANT SELECT, INSERT, UPDATE, DELETE ON `app_db`.* TO `rw_user1`@`localhost` |
+| GRANT `app_read`@`%`,`app_write`@`%` TO `rw_user1`@`localhost`               |
++------------------------------------------------------------------------------+
+2.3 撤消角色或角色权限
+
+正如可以授权某个用户的角色一样，可以从帐户中撤销这些角色：
+
+REVOKE role FROM user;
+REVOKE可以用于角色修改角色权限。这不仅影响角色本身权限，还影响任何授予该角色的用户权限。假设想临时让所有用户只读，使用REVOKE从该app_write角色中撤消修改权限 ：
+
+REVOKE INSERT, UPDATE, DELETE ON app_db.* FROM 'app_write';
+碰巧，某个角色完全没有任何权限，正如可以看到的那样SHOW GRANTS （这个语句可以和角色一起使用，而不仅仅是查询用户权限可用）：
+
+mysql> SHOW GRANTS FOR 'app_write';
++---------------------------------------+
+| Grants for app_write@%                |
++---------------------------------------+
+| GRANT USAGE ON *.* TO `app_write`@`%` |
++---------------------------------------+
+从角色中撤销权限会影响到该角色中任何用户的权限，因此 rw_user1现在已经没有表修改权限（INSERT， UPDATE，和 DELETE权限已经没有了）：
+
+mysql> SHOW GRANTS FOR 'rw_user1'@'localhost'
+       USING 'app_read', 'app_write';
++----------------------------------------------------------------+
+| Grants for rw_user1@localhost                                  |
++----------------------------------------------------------------+
+| GRANT USAGE ON *.* TO `rw_user1`@`localhost`                   |
+| GRANT SELECT ON `app_db`.* TO `rw_user1`@`localhost`           |
+| GRANT `app_read`@`%`,`app_write`@`%` TO `rw_user1`@`localhost` |
++----------------------------------------------------------------+
+实际上，rw_user1读/写用户已成为只读用户。对于被授予app_write角色的任何其他用户也会发生这种情况，说明修改使用角色而不必修改个人帐户的权限。
+
+要恢复角色的修改权限，只需重新授予它们即可：
+
+GRANT INSERT, UPDATE, DELETE ON app_db.* TO 'app_write';
+现在rw_user1再次具有修改权限，就像授权该app_write角色的其他任何帐户一样。
+
+2.4 删除角色
+
+要删除角色，请使用DROP ROLE：
+
+DROP ROLE 'app_read', 'app_write';
+删除角色会从授权它的每个帐户中撤消该角色。
+
+2.5 角色和用户在实际中的应用
+
+假设遗留应用开发项目在MySQL中的角色出现之前开始，因此与该项目相关联的所有用户都是直接授予权限（而不是授予角色权限）。其中一个帐户是最初被授予权限的开发者用户，如下所示：
+
+CREATE USER 'old_app_dev'@'localhost' IDENTIFIED BY 'old_app_devpass';
+GRANT ALL ON old_app.* TO 'old_app_dev'@'localhost';
+如果此开发人员离开项目，则有必要将权限分配给其他用户，或者项目参与人增多，则可能需要多个用户。以下是解决该问题的一些方法：
+
+ 不使用角色：更改帐户密码，以便原始开发人员不能使用它，并让新的开发人员使用该帐户：
+
+ALTER USER 'old_app_dev'@'localhost' IDENTIFIED BY 'new_password';
+使用角色：锁定帐户以防止任何人使用它来连接服务器：
+
+ALTER USER 'old_app_dev'@'localhost' ACCOUNT LOCK;
+然后将该帐户视为角色。对于每个新开发项目的开发者，创建一个新帐户并授予其原始开发者帐户：
+
+CREATE USER 'new_app_dev1'@'localhost' IDENTIFIED BY 'new_password';
+GRANT 'old_app_dev'@'localhost' TO 'new_app_dev1'@'localhost';
+其效果是将原始开发者帐户权限分配给新帐户。
+
+MySQL8.0的用户和角色管理也越来越像Oracle了，8.0中有不少新的特性，变化还是很大的，需要DBA不断的学习和测试，更新对MySQL新版的认知，更好地运维MySQL数据库。未来MySQL数据库自治和智能数据库是必然发展趋势，对DBA来说是解放，也是挑战。
