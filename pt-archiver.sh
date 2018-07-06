@@ -59,9 +59,9 @@ EXEC_DATE=`date +%Y-%m-%d`
 TABLE_DATE=`date +%Y%m%d` 
 FILE_DIR=`dirname $0` 
 FILE_NAME=`basename $0 .sh` 
-USER="zyadmin" 
-PASSWORD="Zhuyun@123"
-HOST="rm-uf6blk06co539g17n.mysql.rds.aliyuncs.com" 
+USER="root" 
+PASSWORD="123456"
+HOST="1.1.1.10" 
 
 #主表归档  
 sed '/^#.*\|^$/d' ${FILE_DIR}/${FILE_NAME}.def >${FILE_DIR}/${FILE_NAME}.tmp 
