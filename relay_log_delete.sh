@@ -1,8 +1,8 @@
-cat relay_log_delete.sh 
 #!/bin/bash
 #author:apple
 #date:2018-07-11
 #version:1.0
+#update version:2018-07-18 1.1
 
 find . -type f -name "MySQL-01-relay-bin.*[0-9]" -mtime +3 -exec  ls {} \; > relay_log_file
 for i in `cat relay_log_file`
@@ -16,3 +16,4 @@ do
 		fi
 	done
 done
+find . -type f -name "MySQL-01-relay-bin.*[0-9]" -mtime +3 -exec  rm -rf {} \;
