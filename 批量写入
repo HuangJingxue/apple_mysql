@@ -42,3 +42,6 @@ call test1();
 call test1();
 call test1();
 call test1();
+
+SELECT *,sleep(30) FROM t1
+ALTER  table t1 add COLUMN name varchar(20) not null;
