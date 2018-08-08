@@ -1,7 +1,7 @@
 CREATE TABLE t1(   
 id int primary key auto_increment,    
 uname  varchar(20) ,   
-ucreatetime  datetime  ,   
+ucreatetime  datetime,   
 age  int(11)) DEFAULT CHARACTER SET=utf8 COLLATE=utf8_general_ci;
 
 delimiter $$
@@ -25,11 +25,20 @@ dd:loop
         (null,'用户0',sysdate(),20)             
                 ;                                        
         set v_cnt = v_cnt+10 ;                            
-            if  v_cnt = 100000 then leave dd;                           
+            if  v_cnt = 1000000 then leave dd;                           
             end if;          
         end loop dd ; 
 commit;
 end $$
 
 delimiter ;
+call test1();
+call test1();
+call test1();
+call test1();
+call test1();
+call test1();
+call test1();
+call test1();
+call test1();
 call test1();
