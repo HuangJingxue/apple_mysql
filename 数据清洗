@@ -1,0 +1,4 @@
+-- c2a0 特殊字符
+-- 0xC2 0xA0
+select 'fsmt2017 ' ori,  replace('fsmt2017 ',' ',' ') space,trim(replace('fsmt2017 ',' ',' ')) trim_result;
+select trim('fsmt2017 ');
