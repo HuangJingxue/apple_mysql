@@ -1,0 +1,3 @@
+缺点：
+主库数据补偿逻辑：GTID模型下，如果new_master和laster_slave_servers[0]不相等，先把new_master做成last_slave_server[0]的从，
+然后从binlog_server上补偿日志（病态）；对非GTID环境，先利用last_slave_servers[0]de relay_log进行补偿，然后在利用主库保存的日志补偿。
