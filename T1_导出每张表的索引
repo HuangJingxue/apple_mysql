@@ -1,3 +1,4 @@
+--导出指定表
 SELECT
 	concat(
 		'alter table ',
@@ -55,3 +56,54 @@ GROUP BY
 ORDER BY
 	table_name ASC,
 	index_name ASC;
+	
+--导出执行库下的所有表
+select
+	concat(
+		'alter table ',
+		table_name,
+		' ',
+		'add ',
+
+	if (
+		non_unique = 1,
+		case upper(index_type)
+	when 'fulltext' then 'fulltext index'
+	when 'spatial' then 'spatial index'
+	else
+		concat(
+			'index ',
+			index_name,
+			' using ',
+			index_type
+		)
+	end,
+
+if (
+	upper(index_name) = 'primary',
+	concat(
+		'primary key using ',
+		index_type
+	),
+	concat(
+		'unique index ',
+		index_name,
+		' using ',
+		index_type
+	)
+)
+	),
+	'(',
+	group_concat(
+		distinct concat('', column_name, '')
+		order by
+			seq_in_index asc separator ', '
+	),
+	');'
+	) as 'show_add_indexes'
+from
+	information_schema.statistics
+where table_schema = 'hash_realtime'
+and upper(index_name) !='primary'
+group by table_name,index_name
+order by table_name asc,index_name asc;
