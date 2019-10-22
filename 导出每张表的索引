@@ -1,0 +1,57 @@
+SELECT
+	concat(
+		'alter table ',
+		table_name,
+		' ',
+		'add ',
+
+	IF (
+		non_unique = 1,
+		CASE upper(index_type)
+	WHEN 'fulltext' THEN
+		'fulltext index'
+	WHEN 'spatial' THEN
+		'spatial index'
+	ELSE
+		concat(
+			'index ',
+			index_name,
+			' using ',
+			index_type
+		)
+	END,
+
+IF (
+	upper(index_name) = 'primary',
+	concat(
+		'primary key using ',
+		index_type
+	),
+	concat(
+		'unique index ',
+		index_name,
+		' using ',
+		index_type
+	)
+)
+	),
+	'(',
+	group_concat(
+		DISTINCT concat('', column_name, '')
+		ORDER BY
+			seq_in_index ASC SEPARATOR ', '
+	),
+	');'
+	) AS 'show_add_indexes'
+FROM
+	information_schema.statistics
+WHERE
+	table_schema = 'realtime_rpt'
+AND table_name = 'or_sd_saleorder_et'
+AND upper(index_name) != 'primary'
+GROUP BY
+	table_name,
+	index_name
+ORDER BY
+	table_name ASC,
+	index_name ASC;
