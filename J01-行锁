@@ -1,0 +1,34 @@
+-- 行锁话术
+从贵司反馈的数据库当前的会话状态来看，偶尔会有事务都是锁等待的状态。
+该原因是因为同一时刻发起了大量的update同表操作，当前一个事务没有提交，后面的SQL想要执行就会被锁，就会出现咱们今天查看有大量事务lock wait的状态，SQL阻塞的情况。
+当等待获取锁的时间超过innodb_lock_wait_timeout 数据库该参数设置时间，就会提示 Lock wait timeout exceeded; try restarting transaction。
+
+更新时使用的where为id，该列是XX表的主键索引。从MySQL Innodb引擎的原理上来解释:
+多个未提交事务在对同一行发起update操作时会出现行锁冲突（MySQL Innodb引擎的原理）。
+在我司测试环境进行了对当时的故障场景进行了重现，具体步骤如下：
+1、将该表的DDL以及两行假数据导入到测试库中
+2、模拟多个事务对该表的同一行记录进行update操作（产生锁冲突）
+3、模拟多个事务对该表的不同行记录进行update操作（未产生所冲突）
+4、通过两个测试，验证了多个未提交事务在对同一行发起update操作时会出现行锁冲突
+
+未解：
+1、锁冲突为偶发性是什么原因
+2、什么场景才会出现同一行的update会在多个未提交的事务当中出现
+
+数据库端当前只能看到数据库层面锁冲突的原因，要彻底排查还需要从业务侧进行支持。
+
+
+临时解决方案:
+找一台可以访问数据库的ECS，去部署一个定时check行锁的脚本，该脚本可以实现以下功能：
+
+#查看innodb事务锁冲突情况
+select blocking_trx_id, count(blocking_trx_id) as countnum from (select a.trx_id,a.trx_state,b.requesting_trx_id,b.blocking_trx_id from information_schema.innodb_lock_waits as  b left join information_schema.innodb_trx as a on a.trx_id=b.requesting_trx_id) as t1 group by blocking_trx_id order by  countnum  desc;
+# 获取到innodb事务锁冲突的原始id
+select id from information_schema.processlist,information_schema.innodb_trx  where trx_mysql_thread_id=id and trx_id in (select blocking_trx_id from (select blocking_trx_id, count(blocking_trx_id) as countnum from (select a.trx_id,a.trx_state,b.requesting_trx_id,b.blocking_trx_id from information_schema.innodb_lock_waits as  b left join information_schema.innodb_trx as a on a.trx_id=b.requesting_trx_id) as t1 group by blocking_trx_id order by  countnum desc limit 1) c) ;
+# 自动KILL锁冲突的根源会话
+select concat('kill ',id,';') from information_schema.processlist,information_schema.innodb_trx  where trx_mysql_thread_id=id and trx_id in (select blocking_trx_id from (select blocking_trx_id, count(blocking_trx_id) as countnum from (select a.trx_id,a.trx_state,b.requesting_trx_id,b.blocking_trx_id from information_schema.innodb_lock_waits as  b left join information_schema.innodb_trx as a on a.trx_id=b.requesting_trx_id) as t1 group by blocking_trx_id order by  countnum desc limit 1) c) ;
+
+需求：
+1、提供一台可以访问数据库的ECS，尽快提供，我们第一时间部署
+1、麻烦贵司提供一下包含这条update语句的完整事务
+2、拿到完整事务后，可以模拟业务场景再次进行故障重演，确认问题根源。
