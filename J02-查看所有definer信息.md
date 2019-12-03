@@ -1,3 +1,4 @@
+```sql
 mysql>select ROUTINE_SCHEMA,ROUTINE_NAME,DEFINER from information_schema.routines;
 +--------------------------+------------------------+-------------------+
 | ROUTINE_SCHEMA           | ROUTINE_NAME           | DEFINER           |
@@ -38,3 +39,4 @@ mysql>select trigger_schema,trigger_name,definer from information_schema.trigger
 | trigger_schema           | trigger_name           | definer           |
 +--------------------------+------------------------+-------------------+
 返回行数：[0]，耗时：39 ms.
+```
