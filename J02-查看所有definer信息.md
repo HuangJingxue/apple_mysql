@@ -28,12 +28,7 @@ mysql>select trigger_schema,trigger_name,definer from information_schema.trigger
 | orders_ismp_0020         | pt_osc_orders_ismp_0020_or_ud_ticket_et_1_del | zyadmin_orders@%  |
 +--------------------------+-----------------------------------------------+-------------------+
 返回行数：[3]，耗时：31 ms.
-mysql>select table_schema,table_name,definer from views;
-mysql>select table_schema,table_name,definer from information_schema.views;
-+------------------------+----------------------+-------------------+
-| table_schema           | table_name           | definer           |
-+------------------------+----------------------+-------------------+
-返回行数：[0]，耗时：31 ms.
+
 mysql>select trigger_schema,trigger_name,definer from information_schema.triggers;
 +--------------------------+------------------------+-------------------+
 | trigger_schema           | trigger_name           | definer           |
