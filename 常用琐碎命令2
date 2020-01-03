@@ -5,7 +5,7 @@ netstat -na | grep ESTABLISHED|awk '{print $5}' | awk -F: '{print $1}' | sort|un
 ps -aux 2> /dev/null | sort -k3nr | head -n 5 | awk 'BEGIN{print "%CPU\tPID\tCOMMAD"}{print $4,'\t',$2,'\t',$11}' 
 ps -aux 2> /dev/null | sort -k4nr | head -n 5 | awk 'BEGIN{print "%MEM\tPID\tCOMMAD"}{print $4,'\t',$2,'\t',$11}' 
 
-
+mysqlbinlog --no-defaults --base64-output=decode-rows -v -v mysql-bin.000002 |awk '/###/{if($0~/UPDATE|INSERT|DELETE/)count[$2" "$NF]++}END{for(i in count)print i,"\t",count[i]}'|column -t|sort -k3nr|more
 
 
 select version();
