@@ -459,3 +459,32 @@ port=3306
 mysql -u$user -p$password -h$host  -P$port -e "select  concat('KILL ',id,';') from information_schema.processlist;" > tmpfile
 
 awk '{if (NR != 1) print $0 }' tmpfile | mysql -u$user -p$password -h$host  -P$port
+
+
+二进制日志
+mysqlbinlog --no-defaults -v --base64-output=DECODE-ROWS mybinlog.000749 |awk '/###/{if($0~/UPDATE|INSERT|DELETE/)count[$2" "$NF]++}END{for(i in count)print i,"\t",count[i]}'|column -t|sort -k3nr|more
+
+热点表
+SELECT 
+    object_schema AS table_schema, # 库
+    object_name AS table_name, # 表
+    count_star AS rows_io_total, # 事件总数
+    count_read AS rows_read, # read次数
+    count_write AS rows_write, # write次数
+    count_fetch AS rows_fetchs, # fetch次数
+    count_insert AS rows_inserts, # insert次数
+    count_update AS rows_updates, # update次数
+    count_delete AS rows_deletes, # delete次数
+    CONCAT(ROUND(sum_timer_fetch / 3600000000000000, 2),
+            'h') AS fetch_latency, # fench总时间 单位 小时
+    CONCAT(ROUND(sum_timer_insert / 3600000000000000, 2),
+            'h') AS insert_latency, # insert总时间 单位 小时
+    CONCAT(ROUND(sum_timer_update / 3600000000000000, 2),
+            'h') AS update_latency, # update总时间 单位 小时
+    CONCAT(ROUND(sum_timer_delete / 3600000000000000, 2),
+            'h') AS delete_latency # delete总时间 单位 小时
+FROM
+    performance_schema.table_io_waits_summary_by_table
+ORDER BY sum_timer_wait DESC
+LIMIT 5;
+
