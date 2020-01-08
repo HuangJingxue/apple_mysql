@@ -13,4 +13,6 @@ yum remove percona-xtrabackup
 
 install_80.sh
 ```shell
+wget https://www.percona.com/downloads/XtraBackup/Percona-XtraBackup-8.0.4/binary/redhat/7/x86_64/percona-xtrabackup-80-8.0.4-1.el7.x86_64.rpm
+yum localinstall percona-xtrabackup-80-8.0.4-1.el7.x86_64.rpm
 ```
