@@ -1,4 +1,5 @@
 - [下载](https://www.percona.com/downloads/Percona-XtraBackup-2.4/LATEST/)
+- [下载80](https://www.percona.com/downloads/Percona-XtraBackup-8.0/LATEST/)
 - [安装向导](https://www.percona.com/doc/percona-xtrabackup/2.4/installation/yum_repo.html)
 - [备份指导](https://www.percona.com/doc/percona-xtrabackup/LATEST/backup_scenarios/compressed_backup.html)
 
