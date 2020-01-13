@@ -48,6 +48,8 @@ CREATE TABLE `a2` (
 
 [root@Oracle01 ~]# mysql -uroot -pxxx -e 'use qinxi;select start,count(start) cnt,min(end),max(end) from a2 group by start order by cnt desc;' > a2.sql
 
+sed -n '/1910778420/p' binlog20200113.sql
+
 --从而获取到大事务详情
 
 ```
