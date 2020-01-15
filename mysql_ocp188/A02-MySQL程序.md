@@ -1,0 +1,2 @@
+
+mysql_config_editor 可以存储在一个名为模糊化的登录路径文件认证证书.mylogin.cnf
