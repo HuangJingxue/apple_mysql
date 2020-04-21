@@ -34,4 +34,10 @@ mysql>select trigger_schema,trigger_name,definer from information_schema.trigger
 | trigger_schema           | trigger_name           | definer           |
 +--------------------------+------------------------+-------------------+
 返回行数：[0]，耗时：39 ms.
+mysql>select db,name,definer,security_type from mysql.proc where name = 'FirstPinyin';
++--------------+----------------+-------------------+-------------------------+
+| db           | name           | definer           | security_type           |
++--------------+----------------+-------------------+-------------------------+
+| gdqywx       | FirstPinyin    | lfmwuy1@%         | DEFINER                 |
++--------------+----------------+-------------------+-------------------------+
 ```
