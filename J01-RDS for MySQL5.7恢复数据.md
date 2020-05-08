@@ -6,8 +6,8 @@ gzip -d filename
 ```
 -备份处理
  ```bash
-grep DEFINER zhebei_prod_member_datafull_202005072343_1588866221_1.sql
-awk '{ if (index($0,"GTID_PURGED")) { getline; while (length($0) > 0) { getline; } } else { print $0 } }' zhebei_prod_member_datafull_202005072343_1588866221_1.sql | grep -iv 'set @@' > your_revised.sql
+grep DEFINER _member_datafull_202005072343_1588866221_1.sql
+awk '{ if (index($0,"GTID_PURGED")) { getline; while (length($0) > 0) { getline; } } else { print $0 } }' _member_datafull_202005072343_1588866221_1.sql | grep -iv 'set @@' > your_revised.sql
 egrep -in "definer|set @@" your_revised.sql
 ```
 
